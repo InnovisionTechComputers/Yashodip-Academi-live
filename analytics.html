@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <title>निकाल विश्लेषण - यशोदीप क्लासेस</title>
+    <style>
+        body { display: flex; font-family: 'Segoe UI', sans-serif; margin: 0; background: #f0f2f5; }
+        .sidebar { width: 250px; background: #2c3e50; color: white; height: 100vh; padding: 20px; position: fixed; }
+        .sidebar h2 { color: #3498db; text-align: center; }
+        .sidebar a { display: block; color: white; padding: 15px; text-decoration: none; border-bottom: 1px solid #3e4f5f; transition: 0.3s; }
+        .sidebar a:hover { background: #34495e; padding-left: 25px; }
+        
+        .main { margin-left: 280px; padding: 30px; width: calc(100% - 310px); }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; }
+        
+        .lang-container { position: absolute; top: 20px; right: 25px; }
+        .lang-btn { background: #3498db; color: white; border: none; padding: 5px 15px; border-radius: 4px; cursor: pointer; }
+
+        .search-section { background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; gap: 15px; align-items: center; }
+        .search-group { flex: 1; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
+        
+        .btn-search { background: #3498db; color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        .btn-search:hover { background: #2980b9; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+        th { background: #3498db; color: white; }
+        
+        .performance-good { color: green; font-weight: bold; }
+        .performance-avg { color: orange; font-weight: bold; }
+        .performance-bad { color: red; font-weight: bold; }
+        
+        #loader { display: none; color: #e67e22; font-weight: bold; text-align: center; margin: 20px; }
+        .no-data { text-align: center; padding: 20px; color: #7f8c8d; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2 id="sideTitle">यशोदीप क्लासेस</h2>
+        <a href="dashboard.html" id="navNewAdm">📝 नवीन ऍडमिशन</a>
+          <a href="inquiry.html" >📞 चौकशी व्यवस्थापन</a>
+        <a href="view-students.html" id="navStudentList">📋 विद्यार्थी यादी</a>
+        <a href="attendance.html" id="navAttendance">📅 हजेरी</a>
+        <a href="results.html" id="navResults">📊 मार्क अपडेट</a>
+        <a href="analytics.html" style="background:#3498db" id="navAnalytics">📈 निकाल विश्लेषण</a>
+        <a href="fees.html" id="navFees">💰 फी रेकॉर्ड</a>
+        <a href="expenses.html" id="navExpenses">💸 खर्च व्यवस्थापन</a>
+        <a href="#" onclick="logout()" id="navLogout">🚪 Log Out</a>
+    </div>
+
+    <div class="main">
+        <div class="card">
+            <div class="lang-container">
+                <button class="lang-btn" id="langBtn" onclick="toggleLang()">English</button>
+            </div>
+
+            <h2 id="pageTitle" style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">विद्यार्थी प्रगती अहवाल (Performance Tracker)</h2>
+            
+            <div class="search-section">
+                <div class="search-group">
+                    <label id="lblSearch">विद्यार्थ्याचा PRN नंबर टाका:</label>
+                    <input type="text" id="prnInput" placeholder="उदा. 1001">
+                </div>
+                <button class="btn-search" id="btnSearch" onclick="fetchPerformance()">माहिती शोधा</button>
+            </div>
+
+            <div id="loader">माहिती शोधत आहे, कृपया थांबा...</div>
+
+            <div id="resultContainer" style="display:none;">
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px; border-left: 5px solid #3498db;">
+                    <h3 id="studentDisplay" style="margin:0; color: #2c3e50;"></h3>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th id="thDate">तारीख</th>
+                            <th id="thExam">परीक्षा</th>
+                            <th id="thSubject">विषय</th>
+                            <th id="thMarks">मिळालेले / एकूण</th>
+                            <th id="thPercent">टक्केवारी</th>
+                            <th id="thRemark">शेरा</th>
+                        </tr>
+                    </thead>
+                    <tbody id="performanceRows"></tbody>
+                </table>
+            </div>
+            <div id="noDataMsg" class="no-data" style="display:none;">या PRN नंबरची कोणतीही माहिती उपलब्ध नाही.</div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxkT8mBpQUNv1jLTO7futMhxO0ImZ_7iCCpflEQR-uOPgA1nvyuNM-KHbPZ_O0Srzb3rg/exec";
+        
+        let currentLang = sessionStorage.getItem("lang") || 'mr';
+
+        // भाषेचा डेटा
+        const langData = {
+            mr: {
+                sideTitle: "यशोदीप क्लासेस", navNewAdm: "📝 नवीन ऍडमिशन", navStudentList: "📋 विद्यार्थी यादी", navAttendance: "📅 हजेरी", navResults: "📊 मार्क अपडेट", navAnalytics: "📈 निकाल विश्लेषण", navFees: "💰 फी रेकॉर्ड", navExpenses: "💸 खर्च व्यवस्थापन", navLogout: "🚪 Log Out",
+                pageTitle: "विद्यार्थी प्रगती अहवाल (Performance Tracker)", lblSearch: "विद्यार्थ्याचा PRN नंबर टाका:", btnSearch: "माहिती शोधा", langBtn: "English",
+                loader: "माहिती शोधत आहे, कृपया थांबा...", thDate: "तारीख", thExam: "परीक्षा", thSubject: "विषय", thMarks: "मिळालेले / एकूण", thPercent: "टक्केवारी", thRemark: "शेरा",
+                noData: "या PRN नंबरची कोणतीही माहिती उपलब्ध नाही.", studentPrefix: "विद्यार्थी: "
+            },
+            en: {
+                sideTitle: "Yashodeep Classes", navNewAdm: "📝 New Admission", navStudentList: "📋 Student List", navAttendance: "📅 Attendance", navResults: "📊 Marks Update", navAnalytics: "📈 Result Analysis", navFees: "💰 Fees Record", navExpenses: "💸 Expenses", navLogout: "🚪 Log Out",
+                pageTitle: "Student Performance Tracker", lblSearch: "Enter Student PRN Number:", btnSearch: "Search Info", langBtn: "मराठी",
+                loader: "Loading data, please wait...", thDate: "Date", thExam: "Exam", thSubject: "Subject", thMarks: "Obtained / Total", thPercent: "Percentage", thRemark: "Remark",
+                noData: "No information available for this PRN number.", studentPrefix: "Student: "
+            }
+        };
+
+         document.addEventListener("DOMContentLoaded", function() {
+            const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+            const role = sessionStorage.getItem("userRole");
+
+            if (isLoggedIn !== "true") { window.location.href = "index.html"; return; }
+
+            if (role === "md") {
+                const feeLink = document.getElementById("navFees");
+                const expLink = document.getElementById("navExpenses");
+                if (feeLink) feeLink.style.display = "none";
+                if (expLink) expLink.style.display = "none";
+            }
+            updateLanguageUI();
+        });
+
+        function toggleLang() {
+            currentLang = (currentLang === 'mr') ? 'en' : 'mr';
+            sessionStorage.setItem("lang", currentLang);
+            updateLanguageUI();
+        }
+
+        function updateLanguageUI() {
+            const t = langData[currentLang];
+            for (let id in t) {
+                const el = document.getElementById(id);
+                if (el) el.innerText = t[id];
+            }
+            document.getElementById('prnInput').placeholder = (currentLang === 'mr' ? "उदा. 1001" : "e.g. 1001");
+        }
+
+        document.addEventListener("DOMContentLoaded", updateLanguageUI);
+
+        async function fetchPerformance() {
+            const prn = document.getElementById('prnInput').value;
+            const t = langData[currentLang];
+            if (!prn) { alert(currentLang === 'mr' ? "कृपया PRN नंबर टाका!" : "Please enter PRN!"); return; }
+
+            const loader = document.getElementById('loader');
+            const resultContainer = document.getElementById('resultContainer');
+            const noDataMsg = document.getElementById('noDataMsg');
+
+            loader.style.display = "block";
+            resultContainer.style.display = "none";
+            noDataMsg.style.display = "none";
+
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=searchPRN&prn=${prn}`);
+                const data = await response.json();
+
+                if (!data || data.length === 0) {
+                    noDataMsg.innerText = t.noData;
+                    noDataMsg.style.display = "block";
+                } else {
+                    const tbody = document.getElementById('performanceRows');
+                    tbody.innerHTML = "";
+
+                    let sName = data[0].studentName || (currentLang === 'mr' ? "विद्यार्थी" : "Student");
+                    document.getElementById('studentDisplay').innerText = t.studentPrefix + sName;
+
+                    data.forEach(record => {
+                        const percent = ((record.obtained / record.total) * 100).toFixed(1);
+                        let pClass = "performance-good";
+                        if(percent < 35) pClass = "performance-bad";
+                        else if(percent < 60) pClass = "performance-avg";
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${new Date(record.date).toLocaleDateString(currentLang === 'mr' ? 'mr-IN' : 'en-GB')}</td>
+                            <td>${record.exam}</td>
+                            <td>${record.subject}</td>
+                            <td>${record.obtained} / ${record.total}</td>
+                            <td class="${pClass}">${percent}%</td>
+                            <td>${record.remark || "-"}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    resultContainer.style.display = "block";
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error fetching data!");
+            } finally {
+                loader.style.display = "none";
+            }
+        }
+
+        function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
+        // --- Keyboard Navigation Script Starts ---
+document.addEventListener('keydown', function(e) {
+    const active = document.activeElement;
+    // फक्त Input, Select, Textarea आणि Button वरच हे काम करेल
+    if (!['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(active.tagName)) return;
+
+    // फॉर्म मधील सर्व घटकांची यादी (स्किप न करता)
+    const focusableEls = Array.from(document.querySelectorAll('input, select, textarea, button:not(.lang-btn)'));
+    const index = focusableEls.indexOf(active);
+
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (index + 2 < focusableEls.length) focusableEls[index + 2].focus(); // ग्रिडमध्ये खाली जाण्यासाठी
+            else if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+            break;
+            
+        case 'ArrowUp':
+            e.preventDefault();
+            if (index - 2 >= 0) focusableEls[index - 2].focus(); // ग्रिडमध्ये वर जाण्यासाठी
+            else if (index - 1 >= 0) focusableEls[index - 1].focus();
+            break;
+            
+        case 'ArrowRight':
+            e.preventDefault();
+            if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+            break;
+            
+        case 'ArrowLeft':
+            e.preventDefault();
+            if (index - 1 >= 0) focusableEls[index - 1].focus();
+            break;
+
+        case 'Enter':
+            // जर बटण असेल तर क्लिक होईल, अन्यथा पुढच्या बॉक्समध्ये जाईल
+            if (active.tagName !== 'BUTTON' && active.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+            }
+            break;
+    }
+});
+// --- Keyboard Navigation Script Ends ---
+    </script>
+</body>
+</html>

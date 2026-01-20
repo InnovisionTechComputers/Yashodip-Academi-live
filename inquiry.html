@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <title>चौकशी व्यवस्थापन - यशोदीप क्लासेस</title>
+    <style>
+        body { display: flex; font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; }
+        .sidebar h2 { color: #3498db; text-align: center; }
+        .sidebar { width: 250px; background: #2c3e50; color: white; height: 100vh; padding: 20px; position: fixed; }
+        .sidebar a { display: block; color: white; padding: 15px; text-decoration: none; border-bottom: 1px solid #34495e; transition: 0.3s; }
+        .main { margin-left: 280px; padding: 30px; width: calc(100% - 310px); }
+        .grid-container { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .submit-btn { background: #e67e22; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .filter-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #f8f9fa; position: sticky; top: 0; }
+        .btn-adm { background: #27ae60; color: white; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2 id="sideTitle">यशोदीप क्लासेस</h2>
+        <a href="dashboard.html"  id="navNewAdm">📝 नवीन ऍडमिशन</a>
+        <a href="inquiry.html" style="background:#3498db">📞 चौकशी व्यवस्थापन</a>
+        <a href="view-students.html" id="navStudentList">📋 विद्यार्थी यादी</a>
+        <a href="attendance.html" id="navAttendance">📅 हजेरी</a>
+        <a href="results.html" id="navResults">📊 मार्क अपडेट</a>
+        <a href="analytics.html" id="navAnalytics">📈 निकाल विश्लेषण</a>
+        <a href="fees.html" id="navFees">💰 फी रेकॉर्ड</a>
+        <a href="expenses.html" id="navExpenses">💸 खर्च व्यवस्थापन</a>
+        <a href="#" onclick="logout()" id="navLogout">🚪 Log Out</a>
+    </div>
+
+    <div class="main">
+        <div class="grid-container">
+            <div class="card">
+                <h3 style="color: #e67e22; margin-top:0;">📞 नवीन चौकशी</h3>
+                <form id="inquiryForm">
+                    <div class="form-group"><label>पालकांचे नाव:</label><input type="text" id="parentName" required></div>
+                    <div class="form-group"><label>विद्यार्थ्याचे नाव:</label><input type="text" id="studentName"></div>
+                    <div class="form-group">
+                        <label>वर्ग:</label>
+                        <select id="targetClass" required>
+                            <option value="">-- निवडा --</option>
+                            <script>for(let i=5; i<=12; i++) document.write(`<option value="${i}">${i} वी</option>`);</script>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>मोबाईल:</label><input type="tel" id="phone" maxlength="10" required></div>
+                    <div class="form-group"><label>शेरा:</label><textarea id="remark" rows="2"></textarea></div>
+                    <button type="button" id="saveBtn" class="submit-btn" onclick="sendInquiry()">सेव्ह करा</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="filter-section">
+                    <h3>📋 चौकशी यादी</h3>
+                    <select id="classFilter" onchange="displayData()">
+                        <option value="All">सर्व वर्ग</option>
+                        <script>for(let i=5; i<=12; i++) document.write(`<option value="${i}">${i} वी</option>`);</script>
+                    </select>
+                </div>
+                <div style="overflow-y:auto; max-height:500px;">
+                    <table>
+                        <thead><tr><th>तारीख</th><th>नाव</th><th>वर्ग</th><th>संपर्क</th><th>कृती</th></tr></thead>
+                        <tbody id="inquiryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4pP4lOcUed91ijYjDbYgtCcbL6Ez8VY2FJFsY2KhTVWzVYozyUbM5uiG07prorls_Qg/exec";
+        let allInquiries = [];
+
+        // १. आधी फंक्शन्स डिफाइन करूया (जेणेकरून ब्राउझरला ती आधी सापडतील)
+        function updateLanguageUI() {
+            const lang = localStorage.getItem("lang") || "mr";
+            const translations = {
+                mr: {
+                    sideTitle: "यशोदीप क्लासेस",
+                    navNewAdm: "📝 नवीन ऍडमिशन",
+                    navStudentList: "📋 विद्यार्थी यादी",
+                    navAttendance: "📅 हजेरी",
+                    navResults: "📊 मार्क अपडेट",
+                    navAnalytics: "📈 निकाल विश्लेषण",
+                    navFees: "💰 फी रेकॉर्ड",
+                    navExpenses: "💸 खर्च व्यवस्थापन",
+                    navLogout: "🚪 Log Out"
+                },
+                en: {
+                    sideTitle: "Yashodeep Classes",
+                    navNewAdm: "📝 New Admission",
+                    navStudentList: "📋 Student List",
+                    navAttendance: "📅 Attendance",
+                    navResults: "📊 Update Marks",
+                    navAnalytics: "📈 Analytics",
+                    navFees: "💰 Fees Record",
+                    navExpenses: "💸 Expense Mgmt",
+                    navLogout: "🚪 Log Out"
+                }
+            };
+            const t = translations[lang];
+            if(document.getElementById('sideTitle')) document.getElementById('sideTitle').innerText = t.sideTitle;
+            if(document.getElementById('navNewAdm')) document.getElementById('navNewAdm').innerText = t.navNewAdm;
+            if(document.getElementById('navStudentList')) document.getElementById('navStudentList').innerText = t.navStudentList;
+            if(document.getElementById('navAttendance')) document.getElementById('navAttendance').innerText = t.navAttendance;
+            if(document.getElementById('navResults')) document.getElementById('navResults').innerText = t.navResults;
+            if(document.getElementById('navAnalytics')) document.getElementById('navAnalytics').innerText = t.navAnalytics;
+            if(document.getElementById('navFees')) document.getElementById('navFees').innerText = t.navFees;
+            if(document.getElementById('navExpenses')) document.getElementById('navExpenses').innerText = t.navExpenses;
+            if(document.getElementById('navLogout')) document.getElementById('navLogout').innerText = t.navLogout;
+        }
+
+        function logout() {
+            if(confirm("तुम्हाला बाहेर पडायचे आहे का?")) {
+                sessionStorage.clear();
+                window.location.href = "index.html";
+            }
+        }
+
+        // २. आता इव्हेंट लिसनर्स आणि बाकीचे लॉजिक
+        document.addEventListener("DOMContentLoaded", function() {
+            const isLoggedIn = sessionStorage.getItem("isLoggedIn");
+            const role = sessionStorage.getItem("userRole");
+
+            if (isLoggedIn !== "true") { window.location.href = "index.html"; return; }
+
+            if (role === "md") {
+                const feeLink = document.getElementById("navFees");
+                const expLink = document.getElementById("navExpenses");
+                if (feeLink) feeLink.style.display = "none";
+                if (expLink) expLink.style.display = "none";
+            }
+            updateLanguageUI(); // आता हे फंक्शन ब्राउझरला सापडेल
+            fetchInquiries(); 
+        });
+
+        async function fetchInquiries() {
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=readInquiry`);
+                allInquiries = await response.json();
+                displayData();
+            } catch (e) { console.error(e); }
+        }
+
+        function displayData() {
+            const filter = document.getElementById('classFilter').value;
+            const tableBody = document.getElementById('inquiryTableBody');
+            tableBody.innerHTML = "";
+            const filtered = filter === "All" ? allInquiries : allInquiries.filter(i => String(i.targetClass) === filter);
+
+            filtered.reverse().forEach((item, index) => {
+                const originalIndex = allInquiries.length - 1 - index; 
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${item.date}</td>
+                        <td><b>${item.parentName}</b><br>${item.studentName}</td>
+                        <td>${item.targetClass} वी</td>
+                        <td>${item.phone}</td>
+                        <td>
+                            <button class="btn-adm" onclick='goToAdmission(${JSON.stringify(item)})' title="प्रवेश घ्या">➕</button>
+                            <button onclick="deleteInquiry(${originalIndex})" 
+                                style="background:#e74c3c; color:white; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:11px;" title="काढून टाका">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        async function deleteInquiry(index) {
+            if (confirm("ही चौकशी कायमची काढून टाकायची का?")) {
+                const btn = event.target;
+                btn.innerText = "...";
+                btn.disabled = true;
+                try {
+                    await fetch(`${SCRIPT_URL}?action=deleteInquiry&index=${index + 1}`);
+                    alert("चौकशी यशस्वीरित्या काढली गेली!");
+                    fetchInquiries();
+                } catch (e) {
+                    alert("त्रुटी आली!");
+                    btn.disabled = false;
+                    btn.innerText = "🗑️";
+                }
+            }
+        }
+
+        function sendInquiry() {
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            const payload = {
+                type: "Inquiry",
+                parentName: document.getElementById('parentName').value,
+                studentName: document.getElementById('studentName').value,
+                targetClass: document.getElementById('targetClass').value,
+                phone: document.getElementById('phone').value,
+                remark: document.getElementById('remark').value
+            };
+            fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) })
+            .then(() => { alert("नोंद झाली!"); location.reload(); });
+        }
+
+        function goToAdmission(item) {
+            sessionStorage.setItem("tempInquiry", JSON.stringify(item));
+            window.location.href = "dashboard.html"; 
+        }
+        // --- Keyboard Navigation Script Starts ---
+document.addEventListener('keydown', function(e) {
+    const active = document.activeElement;
+    // फक्त Input, Select, Textarea आणि Button वरच हे काम करेल
+    if (!['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(active.tagName)) return;
+
+    // फॉर्म मधील सर्व घटकांची यादी (स्किप न करता)
+    const focusableEls = Array.from(document.querySelectorAll('input, select, textarea, button:not(.lang-btn)'));
+    const index = focusableEls.indexOf(active);
+
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (index + 2 < focusableEls.length) focusableEls[index + 2].focus(); // ग्रिडमध्ये खाली जाण्यासाठी
+            else if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+            break;
+            
+        case 'ArrowUp':
+            e.preventDefault();
+            if (index - 2 >= 0) focusableEls[index - 2].focus(); // ग्रिडमध्ये वर जाण्यासाठी
+            else if (index - 1 >= 0) focusableEls[index - 1].focus();
+            break;
+            
+        case 'ArrowRight':
+            e.preventDefault();
+            if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+            break;
+            
+        case 'ArrowLeft':
+            e.preventDefault();
+            if (index - 1 >= 0) focusableEls[index - 1].focus();
+            break;
+
+        case 'Enter':
+            // जर बटण असेल तर क्लिक होईल, अन्यथा पुढच्या बॉक्समध्ये जाईल
+            if (active.tagName !== 'BUTTON' && active.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+            }
+            break;
+    }
+});
+// --- Keyboard Navigation Script Ends ---
+    </script>
+</body>
+</html>

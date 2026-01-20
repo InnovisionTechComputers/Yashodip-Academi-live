@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>लॉगिन - Yashodip academy and classes</title>
+    
+    <link rel="icon" type="image/jpg" href="logo.png" />
+
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
+                        url('logo.png'); 
+            background-size: cover; 
+            background-repeat: no-repeat;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            overflow: hidden;
+        }
+        
+        .login-card { 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px); 
+            padding: 60px 35px 40px 35px; 
+            border-radius: 30px; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4), inset 0 0 10px rgba(255,255,255,0.5); 
+            width: 360px; 
+            text-align: center; 
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-bottom: 8px solid #e67e22; 
+            animation: fadeIn 1s ease-out, floating 4s ease-in-out infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .logo-container {
+            width: 120px;
+            height: 120px;
+            margin: -125px auto 20px auto; 
+            background: white;
+            border-radius: 50%;
+            padding: 5px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .logo-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 50%;
+        }
+        
+        .lang-switch { position: absolute; top: 20px; right: 20px; }
+        .lang-switch button { 
+            background: rgba(230, 126, 34, 0.1); 
+            color: #e67e22; 
+            border: 1px solid #e67e22; 
+            padding: 5px 12px; 
+            border-radius: 15px; 
+            cursor: pointer; 
+            font-size: 10px; 
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .lang-switch button:hover { background: #e67e22; color: white; }
+        
+        h2 { color: #1a252f; margin: 10px 0 5px 0; font-size: 22px; font-weight: 800; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        #subTitle { color: #7f8c8d; margin-bottom: 30px; font-size: 14px; letter-spacing: 2px; }
+        
+        .input-group { position: relative; width: 100%; }
+        
+        input[type="text"], input[type="password"] { 
+            width: 100%; 
+            padding: 16px; 
+            margin: 12px 0; 
+            border: 2px solid #f1f1f1; 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            background: #fdfdfd; 
+            font-size: 15px;
+            transition: 0.4s;
+        }
+        
+        input:focus { 
+            border-color: #e67e22; 
+            outline: none; 
+            background: #fff;
+            box-shadow: 0 0 20px rgba(230, 126, 34, 0.4);
+            transform: scale(1.02);
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 20px;
+            color: #bdc3c7;
+            transition: 0.3s;
+        }
+        .toggle-password:hover { color: #e67e22; }
+
+        .remember-me-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin: 10px 5px 20px 5px;
+            font-size: 13px;
+            color: #7f8c8d;
+            cursor: pointer;
+        }
+        .remember-me-container input { width: auto; margin-right: 10px; accent-color: #e67e22; }
+        
+        button.login-btn { 
+            width: 100%; 
+            padding: 16px; 
+            background: linear-gradient(135deg, #e67e22, #d35400); 
+            color: white; 
+            border: none; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 18px; 
+            font-weight: bold; 
+            transition: 0.4s; 
+            box-shadow: 0 10px 20px rgba(211, 84, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button.login-btn::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 20%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: rotate(30deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { left: -60%; }
+            20% { left: 120%; }
+            100% { left: 120%; }
+        }
+        
+        button.login-btn:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 15px 25px rgba(211, 84, 0, 0.4); 
+            filter: brightness(1.1);
+        }
+        
+        .error { 
+            background: #fdf2f2;
+            color: #e74c3c; 
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px; 
+            display: none; 
+            margin-top: 20px; 
+            font-weight: 600; 
+            border-left: 4px solid #e74c3c;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="lang-switch">
+        <button id="langBtn" onclick="toggleLanguage()">English</button>
+    </div>
+
+    <div class="logo-container">
+        <img src="logo.png" alt="Yashodip Logo">
+    </div>
+
+    <h2 id="title">Yashodip academy and classes</h2>
+    <p id="subTitle">प्रणाली लॉगिन</p>
+    
+    <input type="text" id="username" placeholder="युजर आयडी">
+    
+    <div class="input-group">
+        <input type="password" id="password" placeholder="पासवर्ड">
+        <span class="toggle-password" onclick="togglePassword()">👁️</span>
+    </div>
+
+    <div class="remember-me-container">
+        <input type="checkbox" id="rememberMe">
+        <label for="rememberMe" id="labelRemember" style="cursor:pointer">मला लक्षात ठेवा</label>
+    </div>
+    
+    <button class="login-btn" id="loginBtn" onclick="checkLogin()">प्रवेश करा</button>
+    
+    <p id="errorMessage" class="error">चुकीचा आयडी किंवा पासवर्ड!</p>
+</div>
+
+<script>
+    let currentLang = 'mr';
+
+    const translations = {
+        mr: {
+            title: "Yashodip academy and classes",
+            subTitle: "प्रणाली लॉगिन",
+            userPlace: "युजर आयडी",
+            passPlace: "पासवर्ड",
+            loginBtn: "प्रवेश करा",
+            error: "❌ चुकीचा आयडी किंवा पासवर्ड!",
+            langBtn: "English",
+            remember: "मला लक्षात ठेवा"
+        },
+        en: {
+            title: "Yashodip academy and classes",
+            subTitle: "System Login",
+            userPlace: "User ID",
+            passPlace: "Password",
+            loginBtn: "Login",
+            error: "❌ Invalid ID or Password!",
+            langBtn: "मराठी",
+            remember: "Remember Me"
+        }
+    };
+
+    window.onload = function() {
+        const savedUser = localStorage.getItem("rememberedUser");
+        if (savedUser) {
+            document.getElementById("username").value = savedUser;
+            document.getElementById("rememberMe").checked = true;
+        }
+    };
+
+    function togglePassword() {
+        const passField = document.getElementById("password");
+        const toggleIcon = document.querySelector(".toggle-password");
+        if (passField.type === "password") {
+            passField.type = "text";
+            toggleIcon.innerText = "🔒"; 
+        } else {
+            passField.type = "password";
+            toggleIcon.innerText = "👁️"; 
+        }
+    }
+
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            checkLogin();
+        }
+    });
+
+    function toggleLanguage() {
+        currentLang = (currentLang === 'mr') ? 'en' : 'mr';
+        updateUI();
+    }
+
+    function updateUI() {
+        const t = translations[currentLang];
+        document.getElementById("title").innerText = t.title;
+        document.getElementById("subTitle").innerText = t.subTitle;
+        document.getElementById("username").placeholder = t.userPlace;
+        document.getElementById("password").placeholder = t.passPlace;
+        document.getElementById("loginBtn").innerText = t.loginBtn;
+        document.getElementById("errorMessage").innerText = t.error;
+        document.getElementById("langBtn").innerText = t.langBtn;
+        document.getElementById("labelRemember").innerText = t.remember;
+    }
+
+    function checkLogin() {
+        const user = document.getElementById("username").value;
+        const pass = document.getElementById("password").value;
+        const remember = document.getElementById("rememberMe").checked;
+
+        if ((user === "owner" && pass === "owner@123") || (user === "md" && pass === "md@123")) {
+            if (remember) {
+                localStorage.setItem("rememberedUser", user);
+            } else {
+                localStorage.removeItem("rememberedUser");
+            }
+            sessionStorage.setItem("isLoggedIn", "true");
+            sessionStorage.setItem("userRole", user);
+            localStorage.setItem("lang", currentLang);
+            window.location.href = "dashboard.html";
+        } else {
+            const errorElement = document.getElementById("errorMessage");
+            errorElement.style.display = "block";
+        }
+    }
+
+    window.addEventListener('load', function() {
+        setTimeout(speakHelloMarathi, 500);
+    });
+
+    function speakHelloMarathi() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            var msg = new SpeechSynthesisUtterance();
+            msg.text = "नमस्ते सर, Yashodip academy and classes मध्ये आपले स्वागत आहे" + 
+                       "। कृपया आपले युजर आयडी आणि पासवर्ड टाका आणि प्रवेश करा" +
+                       "। धन्यवाद" ; 
+            msg.lang = 'hi-IN'; 
+            msg.rate = 0.85; 
+            msg.pitch = 1.1; 
+            msg.volume = 1;
+            window.speechSynthesis.speak(msg);
+        }
+    }
+
+    document.body.addEventListener('click', function() {
+        if (!window.speechSynthesis.speaking) {
+            speakHelloMarathi();
+        }
+    }, { once: true });
+    // --- Keyboard Navigation Script Starts ---
+document.addEventListener('keydown', function(e) {
+    const active = document.activeElement;
+    // फक्त Input, Select, Textarea आणि Button वरच हे काम करेल
+    if (!['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(active.tagName)) return;
+
+    // फॉर्म मधील सर्व घटकांची यादी (स्किप न करता)
+    const focusableEls = Array.from(document.querySelectorAll('input, select, textarea, button:not(.lang-btn)'));
+    const index = focusableEls.indexOf(active);
+
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            if (index + 2 < focusableEls.length) focusableEls[index + 2].focus(); // ग्रिडमध्ये खाली जाण्यासाठी
+            else if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+            break;
+            
+        case 'ArrowUp':
+            e.preventDefault();
+            if (index - 2 >= 0) focusableEls[index - 2].focus(); // ग्रिडमध्ये वर जाण्यासाठी
+            else if (index - 1 >= 0) focusableEls[index - 1].focus();
+            break;
+            
+        case 'ArrowRight':
+            e.preventDefault();
+            if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+            break;
+            
+        case 'ArrowLeft':
+            e.preventDefault();
+            if (index - 1 >= 0) focusableEls[index - 1].focus();
+            break;
+
+        case 'Enter':
+            // जर बटण असेल तर क्लिक होईल, अन्यथा पुढच्या बॉक्समध्ये जाईल
+            if (active.tagName !== 'BUTTON' && active.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+            }
+            break;
+    }
+});
+// --- Keyboard Navigation Script Ends ---
+</script>
+
+</body>
+</html>
