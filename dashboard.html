@@ -124,22 +124,22 @@
                 prnEmpty: "PRN: Will generate after selecting class", prnText: "Proposed PRN for Student: ", alertFill: "Please fill Name, Class and Parent Phone!", alertSuccess: "Student data saved successfully!", alertError: "Error occurred! Please check internet connection.", langBtn: "मराठी"
             }
         };
+           document.addEventListener("DOMContentLoaded", function() {
+            if (sessionStorage.getItem("isLoggedIn") !== "true") { window.location.href = "index.html"; return; }
+            const role = sessionStorage.getItem("userRole");
+            if (role === "md") {
+                document.getElementById("navFees").style.display = "none";
+                document.getElementById("navExpenses").style.display = "none";
+            }
+            updateLanguageUI();
+        });
+
 
         document.addEventListener("DOMContentLoaded", function() {
             const isLoggedIn = sessionStorage.getItem("isLoggedIn");
-            const role = sessionStorage.getItem("userRole");
-
             if (isLoggedIn !== "true") { window.location.href = "index.html"; return; }
-
-            if (role === "md") {
-                const feeLink = document.getElementById("navFees");
-                const expLink = document.getElementById("navExpenses");
-                if (feeLink) feeLink.style.display = "none";
-                if (expLink) expLink.style.display = "none";
-            }
             updateLanguageUI();
             
-            // चौकशीतून आलेला डेटा आपोआप भरण्यासाठी
             const rawData = sessionStorage.getItem("tempInquiry");
             if (rawData) {
                 const data = JSON.parse(rawData);
@@ -152,7 +152,6 @@
                 sessionStorage.removeItem("tempInquiry");
                 alert("चौकशीतील माहिती आपोआप भरली गेली आहे!");
             }
-            
             setTimeout(checkBirthdays, 5000); 
         });
 
@@ -179,52 +178,30 @@
             showSubjects();
         }
 
-       function genPRN() {
-    let c = document.getElementById('cls').value;
-    let d = document.getElementById('prnRes');
-    const t = langData[currentLang];
+        function genPRN() {
+            let c = document.getElementById('cls').value;
+            let d = document.getElementById('prnRes');
+            const t = langData[currentLang];
+            if (!c) { d.innerText = t.prnEmpty; return; }
+            d.innerText = (currentLang === 'mr') ? "PRN तपासत आहे..." : "Checking PRN...";
+            let oldScript = document.getElementById('jsonpScript');
+            if (oldScript) oldScript.remove();
+            let script = document.createElement('script');
+            script.id = 'jsonpScript';
+            script.src = `${SCRIPT_URL}?action=read&className=${c}&callback=handlePRNResponse&t=${new Date().getTime()}`;
+            document.body.appendChild(script);
+        }
 
-    if (!c) {
-        d.innerText = t.prnEmpty;
-        return;
-    }
+        function handlePRNResponse(students) {
+            let c = document.getElementById('cls').value;
+            let d = document.getElementById('prnRes');
+            const t = langData[currentLang];
+            // PRN सुधारणा: प्रत्येक विद्यार्थ्याला वेगळा नंबर मिळण्यासाठी (01, 02)
+            let nextNum = (students.length + 1).toString().padStart(2, '0');
+            let finalPRN = c + nextNum; 
+            d.innerText = t.prnText + finalPRN;
+        }
 
-    d.innerText = (currentLang === 'mr') ? "PRN तपासत आहे..." : "Checking PRN...";
-
-    let oldScript = document.getElementById('jsonpScript');
-    if (oldScript) oldScript.remove();
-
-    let script = document.createElement('script');
-    script.id = 'jsonpScript';
-    // येथे 'className' पाठवला आहे ज्यामुळे स्क्रिप्ट बरोबर टॅब शोधेल
-    script.src = `${SCRIPT_URL}?action=read&className=${c}&callback=handlePRNResponse&t=${new Date().getTime()}`;
-    document.body.appendChild(script);
-}
-function handlePRNResponse(students) {
-    let c = document.getElementById('cls').value;
-    let d = document.getElementById('prnRes');
-    const t = langData[currentLang];
-
-    // विद्यार्थ्यांची संख्या मोजून पुढचा नंबर काढणे (उदा. 001, 002)
-    let nextNum = (students.length + 1).toString().padStart(3, '0');
-    
-    let finalPRN = "";
-    
-    // अट: १०, ११, १२ साठी ४ अंकी आणि बाकीसाठी ३ अंकी
-    if (["10", "11", "12"].includes(c)) {
-        // १० वी साठी १०००१, १०००२ अशा प्रकारे (४ अंकी सफिक्स मिळून ५-६ अंकी टोटल)
-        // जर तुम्हाला फक्त ४ अंकीच हवा असेल तर prefix बदलू शकता
-        let prefix = (c == "10") ? "10" : (c == "11") ? "11" : "12";
-        finalPRN = prefix + (students.length + 1).toString().padStart(2, '0'); 
-        // वरील लॉजिकनुसार १० वी चा पहिला विद्यार्थी '1001' येईल (एकूण ४ अंक)
-    } else {
-        // ५ ते ९ साठी ३ अंकी (उदा. ५ वी चा पहिला विद्यार्थी '501')
-        finalPRN = c + (students.length + 1).toString().padStart(2, '0');
-        // वरील लॉजिकनुसार ५ वी चा पहिला विद्यार्थी '501' येईल (एकूण ३ अंक)
-    }
-
-    d.innerText = t.prnText + finalPRN;
-}
         function showSubjects() {
             let c = document.getElementById('cls').value;
             let section = document.getElementById('subjectSection');
@@ -237,39 +214,35 @@ function handlePRNResponse(students) {
             if(["5", "6", "7", "8"].includes(c)) { subjects = ["इंग्लिश", "गणित", "सायन्स"]; compulsory = true; }
             else if(["9", "10"].includes(c)) { subjects = ["इंग्लिश", "गणित १", "गणित २", "सायन्स १", "सायन्स २"]; }
             else if(["11", "12"].includes(c)) { subjects = ["Maths", "Physics", "Chemistry", "Biology"]; }
-
             subjects.forEach(sub => {
                 let checkAttr = compulsory ? "checked onclick='return false;'" : "checked";
                 list.innerHTML += `<div class="subject-item"><input type="checkbox" name="subjects" value="${sub}" ${checkAttr}> <span>${sub}</span></div>`;
             });
         }
 
-       function saveStudent() {
-    const t = langData[currentLang];
-    const btn = document.getElementById('submitBtn');
-    const name = document.getElementById('studentName').value;
-    const parentPhone = document.getElementById('parentPhone').value;
-    const studentClass = document.getElementById('cls').value;
-    const dobValue = document.getElementById('dob').value;
+        function saveStudent() {
+            const t = langData[currentLang];
+            const btn = document.getElementById('submitBtn');
+            const name = document.getElementById('studentName').value;
+            const parentPhone = document.getElementById('parentPhone').value;
+            const studentClass = document.getElementById('cls').value;
+            const dobValue = document.getElementById('dob').value;
 
-    // आधीचे चेक
-    if(!name || !parentPhone || !studentClass || !dobValue) { alert(t.alertFill); return; }
+            if(!name || !parentPhone || !studentClass || !dobValue) { alert(t.alertFill); return; }
+            if(parentPhone.length !== 10) { alert(currentLang === 'mr' ? "कृपया पालकांचा १० अंकी मोबाईल नंबर भरा!" : "Please enter a valid 10-digit Parent Phone number!"); return; }
 
-    // नवीन फोन नंबर व्हॅलिडेशन (१० अंक अनिवार्य)
-    if(parentPhone.length !== 10) {
-        alert(currentLang === 'mr' ? "कृपया पालकांचा १० अंकी मोबाईल नंबर भरा!" : "Please enter a valid 10-digit Parent Phone number!");
-        return;
-    }
-
-    btn.disabled = true;
-    // बाकीचा सेव्ह करण्याचा कोड तसाच राहील...
+            btn.disabled = true;
             btn.innerText = (currentLang === 'mr') ? "सेव्ह होत आहे..." : "Saving...";
+
+            // तारीख सुधारणा: शीटमध्ये व्यवस्थित दिसण्यासाठी DD/MM/YYYY फॉरमॅट
+            let dateParts = dobValue.split("-");
+            let formattedDob = dateParts[2] + "/" + dateParts[1] + "/" + dateParts[0];
 
             let studentData = {
                 type: "Students",
                 prn: document.getElementById('prnRes').innerText.split(": ")[1],
                 name: name,
-                dob: dobValue,
+                dob: formattedDob,
                 class: studentClass,
                 school: document.getElementById('school').value,
                 studentPhone: document.getElementById('studentPhone').value,
@@ -294,6 +267,7 @@ function handlePRNResponse(students) {
             });
         }
 
+
         async function checkBirthdays() {
             try {
                 const response = await fetch(`${SCRIPT_URL}?action=read`);
@@ -301,7 +275,6 @@ function handlePRNResponse(students) {
                 const today = new Date();
                 const todayDay = today.getDate();
                 const todayMonth = today.getMonth() + 1;
-
                 students.forEach(student => {
                     if (student.dob) {
                         const dob = new Date(student.dob);
@@ -318,49 +291,21 @@ function handlePRNResponse(students) {
         }
 
         function logout() { sessionStorage.clear(); window.location.href = "index.html"; }
-        // --- Keyboard Navigation Script Starts ---
-document.addEventListener('keydown', function(e) {
-    const active = document.activeElement;
-    // फक्त Input, Select, Textarea आणि Button वरच हे काम करेल
-    if (!['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(active.tagName)) return;
 
-    // फॉर्म मधील सर्व घटकांची यादी (स्किप न करता)
-    const focusableEls = Array.from(document.querySelectorAll('input, select, textarea, button:not(.lang-btn)'));
-    const index = focusableEls.indexOf(active);
-
-    switch(e.key) {
-        case 'ArrowDown':
-            e.preventDefault();
-            if (index + 2 < focusableEls.length) focusableEls[index + 2].focus(); // ग्रिडमध्ये खाली जाण्यासाठी
-            else if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
-            break;
-            
-        case 'ArrowUp':
-            e.preventDefault();
-            if (index - 2 >= 0) focusableEls[index - 2].focus(); // ग्रिडमध्ये वर जाण्यासाठी
-            else if (index - 1 >= 0) focusableEls[index - 1].focus();
-            break;
-            
-        case 'ArrowRight':
-            e.preventDefault();
-            if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
-            break;
-            
-        case 'ArrowLeft':
-            e.preventDefault();
-            if (index - 1 >= 0) focusableEls[index - 1].focus();
-            break;
-
-        case 'Enter':
-            // जर बटण असेल तर क्लिक होईल, अन्यथा पुढच्या बॉक्समध्ये जाईल
-            if (active.tagName !== 'BUTTON' && active.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                if (index + 1 < focusableEls.length) focusableEls[index + 1].focus();
+        // --- Keyboard Navigation (Arrow Keys & Enter) ---
+        document.addEventListener('keydown', function(e) {
+            const active = document.activeElement;
+            if (!['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(active.tagName)) return;
+            const focusableEls = Array.from(document.querySelectorAll('input, select, textarea, button:not(.lang-btn)'));
+            const index = focusableEls.indexOf(active);
+            switch(e.key) {
+                case 'ArrowDown': e.preventDefault(); if (index + 2 < focusableEls.length) focusableEls[index + 2].focus(); else if (index + 1 < focusableEls.length) focusableEls[index + 1].focus(); break;
+                case 'ArrowUp': e.preventDefault(); if (index - 2 >= 0) focusableEls[index - 2].focus(); else if (index - 1 >= 0) focusableEls[index - 1].focus(); break;
+                case 'ArrowRight': e.preventDefault(); if (index + 1 < focusableEls.length) focusableEls[index + 1].focus(); break;
+                case 'ArrowLeft': e.preventDefault(); if (index - 1 >= 0) focusableEls[index - 1].focus(); break;
+                case 'Enter': if (active.tagName !== 'BUTTON' && active.tagName !== 'TEXTAREA') { e.preventDefault(); if (index + 1 < focusableEls.length) focusableEls[index + 1].focus(); } break;
             }
-            break;
-    }
-});
-// --- Keyboard Navigation Script Ends ---
+        });
     </script>
 </body>
 </html>
